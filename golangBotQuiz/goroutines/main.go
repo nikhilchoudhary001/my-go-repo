@@ -57,7 +57,7 @@ func printOdd(c chan int) {
 		if i != 1 {
 			i = <-c
 		}
-		if i > n {
+		if i > 10 {
 			wg.Done()
 			break
 		}
@@ -70,7 +70,7 @@ func printOdd(c chan int) {
 func printEven(c chan int) {
 	for {
 		i := <-c
-		if i > n {
+		if i > 10 {
 			wg.Done()
 			break
 		}

@@ -20,4 +20,5 @@ func main() {
 	fmt.Println(len(a), cap(a), len(b), cap(b))
 	fmt.Println(b)
 	fmt.Println(a)
+
 }

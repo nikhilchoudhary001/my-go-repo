@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"sync"
-	"time"
 )
 
 func main() {
@@ -12,27 +11,23 @@ func main() {
 	wg.Add(2)
 	go even(ch, &wg)
 	go odd(ch, &wg)
-	ch <- true
 	wg.Wait()
 }
 
 func odd(ch chan bool, wg *sync.WaitGroup) {
-	for i := 1; ; i = i + 2 {
-		<-ch
-		time.Sleep(1 * time.Second)
-		fmt.Println(i)
-		ch <- true
+	defer wg.Done()
+	for i := 0; i < 10; i++ {
+		fmt.Print(i, " Odd ")
+		if i == 4 {
+			return
+		}
 	}
-	wg.Done()
 }
 
 func even(ch chan bool, wg *sync.WaitGroup) {
-	for i := 2; ; i = i + 2 {
-		<-ch
-		time.Sleep(1 * time.Second)
-		fmt.Println(i)
-		ch <- true
-	}
-	wg.Done()
+	defer wg.Done()
+	for i := 0; i < 6; i++ {
+		fmt.Print(i, " Even ")
 
+	}
 }
