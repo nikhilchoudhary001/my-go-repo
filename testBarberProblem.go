@@ -30,6 +30,10 @@ type Customer struct {
 	name string
 }
 
+func (c *Customer) String() string {
+	return fmt.Sprintf("%p", c)[7:]
+}
+
 func NewBarber() (b *Barber) {
 	return &Barber{
 		name:  "Sam",
@@ -37,8 +41,81 @@ func NewBarber() (b *Barber) {
 	}
 }
 
+// Barber goroutine
+// Checks for customers
+// Sleeps - wait for wakers to wake him up
 func barber(b *Barber, wr chan *Customer, wakers chan *Customer) {
+	for {
+		b.Lock()
+		defer b.Unlock()
+		b.state = checking
+		b.customer = nil
 
+		// checking the waiting room
+		fmt.Printf("Checking waiting room: %d\n", len(wr))
+		time.Sleep(time.Millisecond * 100)
+		select {
+		case c := <-wr:
+			HairCut(c, b)
+			b.Unlock()
+		default: // Waiting room is empty
+			fmt.Printf("Sleeping Barber - %s\n", b.customer)
+			b.state = sleeping
+			b.customer = nil
+			b.Unlock()
+			c := <-wakers
+			b.Lock()
+			fmt.Printf("Woken by %s\n", c)
+			HairCut(c, b)
+			b.Unlock()
+		}
+	}
+}
+
+func HairCut(c *Customer, b *Barber) {
+	b.state = cutting
+	b.customer = c
+	b.Unlock()
+	fmt.Printf("Cutting  %s hair\n", c)
+	time.Sleep(time.Millisecond * 100)
+	b.Lock()
+	wg.Done()
+	b.customer = nil
+}
+
+// customer goroutine
+// just fizzles out if it's full, otherwise the customer
+// is passed along to the channel handling it's haircut etc
+func customer(c *Customer, b *Barber, wr chan<- *Customer, wakers chan<- *Customer) {
+	// arrive
+	time.Sleep(time.Millisecond * 50)
+	// Check on barber
+	b.Lock()
+	fmt.Printf("Customer %s checks %s barber | room: %d, w %d - customer: %s\n",
+		c, stateLog[b.state], len(wr), len(wakers), b.customer)
+	switch b.state {
+	case sleeping:
+		select {
+		case wakers <- c:
+			// below lines are not mandatory
+			// default:
+			// 	select {
+			// 	case wr <- c:
+			// 	default:
+			// 		wg.Done()
+			// 	}
+		}
+	case cutting:
+		select {
+		case wr <- c:
+		default: // Full waiting room, leave shop
+			wg.Done()
+		}
+		// below lines are not mandatory
+		// case checking:
+		// 	panic("Customer shouldn't check for the Barber when Barber is Checking the waiting room")
+	}
+	b.Unlock()
 }
 
 func main() {
@@ -62,3 +139,36 @@ func main() {
 	wg.Wait()
 	fmt.Println("No more customers for the day")
 }
+
+// Checking waiting room: 0
+// Sleeping Barber - <nil>
+// Customer 48250 checks Sleeping barber | room: 0, w 0 - customer: <nil>
+// Woken by 48250
+// Cutting  48250 hair
+// Customer 48260 checks Cutting barber | room: 0, w 0 - customer: 48250
+// Checking waiting room: 1
+// Cutting  48260 hair
+// Customer 1e000 checks Cutting barber | room: 0, w 0 - customer: 48260
+// Customer 86020 checks Cutting barber | room: 1, w 0 - customer: 48260
+// Customer 1e020 checks Cutting barber | room: 2, w 0 - customer: 48260
+// Customer 48280 checks Cutting barber | room: 3, w 0 - customer: 48260
+// Checking waiting room: 4
+// Cutting  1e000 hair
+// Customer 86070 checks Cutting barber | room: 3, w 0 - customer: 1e000
+// Customer 1e030 checks Cutting barber | room: 4, w 0 - customer: 1e000
+// Customer 1e040 checks Cutting barber | room: 5, w 0 - customer: 1e000
+// Checking waiting room: 5
+// Cutting  86020 hair
+// Customer 1e050 checks Cutting barber | room: 4, w 0 - customer: 86020
+// Checking waiting room: 5
+// Cutting  1e020 hair
+// Checking waiting room: 4
+// Cutting  48280 hair
+// Checking waiting room: 3
+// Cutting  86070 hair
+// Checking waiting room: 2
+// Cutting  1e030 hair
+// Checking waiting room: 1
+// Cutting  1e050 hair
+// Checking waiting room: 0
+// No more customers for the day

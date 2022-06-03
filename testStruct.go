@@ -19,19 +19,19 @@ import "fmt"
 // 	funtest()
 // }
 
-type Customer struct {
+type Customer2 struct {
 	name string
 }
 
 func main() {
-	c := new(Customer)
+	c := new(Customer2)
 	fmt.Printf("%p \n", *c)
 	fmt.Printf("%v \n ", *c)
 	c.name = "Nik"
 	fmt.Printf("%p \n ", *c)
 	fmt.Printf("%v \n", *c)
 
-	g := &Customer{}
+	g := &Customer2{}
 	fmt.Printf("%p \n", *g)
 	fmt.Printf("%v \n ", *g)
 
