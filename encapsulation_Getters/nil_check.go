@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 func main() {
-	//p := &Person{age: 25, name: "Nikhil"}
+	// p := &Person{age: 25, name: "Nikhil"}
 	var p *Person
 	fmt.Println(p.getAge())
 	fmt.Println(p.age) // will give panic nil-pointer
@@ -28,3 +28,5 @@ func (p *Person) getAge() int {
 // 	}
 // 	return
 // }
+
+// test
