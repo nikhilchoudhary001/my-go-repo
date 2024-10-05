@@ -28,5 +28,3 @@ func (p *Person) getAge() int {
 // 	}
 // 	return
 // }
-
-// test
